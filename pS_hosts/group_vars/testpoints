@@ -1,0 +1,4 @@
+---
+# Variables listed here are applicable to testpoint hosts
+
+#httpd_port: 80

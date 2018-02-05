@@ -1,0 +1,5 @@
+---
+# plays for all nodes
+
+- name: Install perfSONAR
+  yum: name=NAME state=latest
