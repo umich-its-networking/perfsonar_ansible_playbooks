@@ -1,16 +1,10 @@
 ---
 # build perfsonar infrastructure
 
-- name: apply common config to all nodes
-  hosts: all
+- name: config testpoint
+  hosts: testpoint
   remote_user: root
-
   roles:
-    - common
-
-- name: config testpoints
-  hosts: testpoints
-  remote_user: root
-
-  roles:
+    - testpoint
+  tags:
     - testpoint

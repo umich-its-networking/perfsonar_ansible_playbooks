@@ -1,5 +1,87 @@
 ---
-# plays for all nodes
+# plays for testpoints
 
-- name: Install perfSONAR
-  yum: name=NAME state=latest
+#- name: restrict root ssh
+
+- name: hosts.allow
+  copy:
+    src: ../files/hosts.allow
+    dest: /etc/hosts.allow
+    force: no
+
+# XXX make this a template / variable
+- name: hosts.deny
+  copy:
+    src: ../files/hosts.deny
+    dest: /etc/hosts.deny
+    force: no
+
+- name: yum epel-release
+  yum: name=epel-release state=latest
+
+- name: yum repo
+  yum: name=http://software.internet2.edu/rpms/el7/x86_64/main/RPMS/perfSONAR-repo-0.8-1.noarch.rpm state=present
+
+- name: yum clean all
+  command: yum clean all
+
+- name: yum install toolkit
+  yum: name=perfsonar-toolkit state=latest
+
+#  XXX umich only
+# /usr/lib/perfsonar/scripts/configure_ntpd new
+- name: copy umich ntp.conf
+  copy:
+    src: ../files/ntp.conf
+    dest: /etc/ntp.conf
+    force: no
+  notify:
+    - restart ntp
+
+- name: yum clean all
+  command: /usr/lib/perfsonar/scripts/configure_sysctl
+
+- name: Make sure we can use htpasswd module
+  yum: name=python-passlib state=installed
+
+- name: htpasswd for pswebadmin
+  htpasswd:
+    path: /etc/perfsonar/toolkit/psadmin.htpasswd
+    name: pswebadmin
+    password: "{{ web_passwd }}"
+    state: present
+
+- name: group psadmin
+  group:
+    name: psadmin
+    state: present
+
+- name: adduser pswebadmin
+  user:
+    name: pswebadmin
+    group: psadmin
+    shell: /bin/false
+
+- name: adduser regular users
+  user:
+    name: "{{ item['uid'] }}"
+    group: pssudo
+  with_items: "{{ users }}"
+
+# XXX pre-make all accounts with ssh keys
+- name: authkey users
+  authorized_key:
+    user: "{{item.uid}}"
+    key: "{{ lookup('file', '/home/{{ item.uid }}/.ssh/id_rsa.pub')}}"
+  with_items: "{{ users }}"
+  ignore_errors: yes
+
+- name: interface config
+  command: /usr/lib/perfsonar/scripts/mod_interface_route --command add --device "{{ item['name'] }}" --ipv4_gateway "{{ item['ipv4_gateway'] }}"
+  with_items: "{{ interfaces }}"
+
+# SYSTUNING
+# FIREWALL SCRIPTS
+# SERVICE WATCHER
+# SERVICE STATUS
+# SERVICE START
