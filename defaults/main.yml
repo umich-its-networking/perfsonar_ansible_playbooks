@@ -1,7 +1,4 @@
----
-# Variables listed here are applicable to testpoint hosts
-
-# ansible-vault encrypt_string 'CHANGEME' --ask-vault-pass --name=web_passwd
+#web_passwd: "something"
 web_passwd: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           38363164303366643333383964313839303264346566636364363062353565316435613866363364
@@ -9,9 +6,3 @@ web_passwd: !vault |
           35636232633362383534393835623035643165666436663236643335303966616437313664363336
           3666616539626332360a373635323330373339653939623961663136313931333437373964343436
           6161
-
-users:
-  - uid: epcjr
-  - uid: simpki
-
-bastion_host: its-perfsonar-bastion.dsc.umich.edu

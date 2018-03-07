@@ -3,12 +3,22 @@
 
 #- name: restrict root ssh
 
+# BASTION
+#- name: adduser local users
+#  local_action:
+#  user:
+#    name: "{{ item['uid'] }}"
+#    generate_ssh_key: yes
+#  with_items: "{{ users }}"
+
+# BASTION
 - name: hosts.allow
   copy:
     src: ../files/hosts.allow
     dest: /etc/hosts.allow
     force: no
 
+# BASTION
 # XXX make this a template / variable
 - name: hosts.deny
   copy:
@@ -28,18 +38,24 @@
 - name: yum install toolkit
   yum: name=perfsonar-toolkit state=latest
 
-#  XXX umich only
-# /usr/lib/perfsonar/scripts/configure_ntpd new
-- name: copy umich ntp.conf
+- name: check for local ntp.conf
+  local_action: stat path=roles/testpoint/files/ntp.conf
+  register: stat_ntp_conf
+
+- name: copy ntp.conf
   copy:
     src: ../files/ntp.conf
     dest: /etc/ntp.conf
     force: no
+  when: stat_ntp_conf.stat.exists == true
   notify:
     - restart ntp
 
-- name: yum clean all
-  command: /usr/lib/perfsonar/scripts/configure_sysctl
+- name: perfSONAR ntp script
+  command: echo Hello
+  when: stat_ntp_conf.stat.exists == false
+  notify:
+    - restart ntp
 
 - name: Make sure we can use htpasswd module
   yum: name=python-passlib state=installed
@@ -56,19 +72,23 @@
     name: psadmin
     state: present
 
+- name: group pssudo
+  group:
+    name: pssudo
+    state: present
+
 - name: adduser pswebadmin
   user:
     name: pswebadmin
     group: psadmin
     shell: /bin/false
 
-- name: adduser regular users
+- name: adduser pssudo users
   user:
     name: "{{ item['uid'] }}"
-    group: pssudo
+    groups: pssudo
   with_items: "{{ users }}"
 
-# XXX pre-make all accounts with ssh keys
 - name: authkey users
   authorized_key:
     user: "{{item.uid}}"
@@ -79,6 +99,10 @@
 - name: interface config
   command: /usr/lib/perfsonar/scripts/mod_interface_route --command add --device "{{ item['name'] }}" --ipv4_gateway "{{ item['ipv4_gateway'] }}"
   with_items: "{{ interfaces }}"
+
+- name: troubleshoot pscheduler
+  command: pscheduler troubleshoot "{{ item['host'] }}"
+  with_items: "{{ host }}"
 
 # SYSTUNING
 # FIREWALL SCRIPTS
