@@ -11,20 +11,46 @@
 #    generate_ssh_key: yes
 #  with_items: "{{ users }}"
 
-# BASTION
+# VARDEF: bastion_hosts
 - name: hosts.allow
-  copy:
-    src: ../files/hosts.allow
-    dest: /etc/hosts.allow
-    force: no
+  lineinfile:
+    path: /etc/hosts.allow
+    line: "sshd: {{ item }}"
+  with_items: "{{ bastion_hosts }}"
+  when: bastion_hosts is defined
 
-# BASTION
-# XXX make this a template / variable
-- name: hosts.deny
-  copy:
-    src: ../files/hosts.deny
-    dest: /etc/hosts.deny
-    force: no
+- name: hosts.deny sshd all
+  lineinfile:
+    path: /etc/hosts.deny
+    line: "sshd: all"
+  when: bastion_hosts is defined
+
+- name: group pssudo
+  group:
+    name: pssudo
+    state: present
+
+# VARDEF: users
+- name: adduser pssudo users
+  user:
+    name: "{{ item['uid'] }}"
+    groups: pssudo
+  with_items: "{{ users }}"
+
+- name: authkey users
+  authorized_key:
+    user: "{{item.uid}}"
+    key: "{{ lookup('file', '/home/{{ item.uid }}/.ssh/id_rsa.pub')}}"
+  with_items: "{{ users }}"
+  ignore_errors: yes
+
+# VARDEF: nameservers
+- name: resolv.conf nameservers
+  lineinfile:
+    path: /etc/resolv.conf
+    line: "nameserver {{ item }}"
+  with_items: "{{ nameservers }}"
+  when: nameservers is defined
 
 - name: yum epel-release
   yum: name=epel-release state=latest
@@ -54,12 +80,13 @@
 - name: perfSONAR ntp script
   command: echo Hello
   when: stat_ntp_conf.stat.exists == false
-  notify:
-    - restart ntp
+#  notify:
+#    - restart ntp
 
 - name: Make sure we can use htpasswd module
   yum: name=python-passlib state=installed
 
+# VARDEF: web_passwd
 - name: htpasswd for pswebadmin
   htpasswd:
     path: /etc/perfsonar/toolkit/psadmin.htpasswd
@@ -72,34 +99,19 @@
     name: psadmin
     state: present
 
-- name: group pssudo
-  group:
-    name: pssudo
-    state: present
-
 - name: adduser pswebadmin
   user:
     name: pswebadmin
     group: psadmin
     shell: /bin/false
 
-- name: adduser pssudo users
-  user:
-    name: "{{ item['uid'] }}"
-    groups: pssudo
-  with_items: "{{ users }}"
-
-- name: authkey users
-  authorized_key:
-    user: "{{item.uid}}"
-    key: "{{ lookup('file', '/home/{{ item.uid }}/.ssh/id_rsa.pub')}}"
-  with_items: "{{ users }}"
-  ignore_errors: yes
-
+# VARDEF: interfaces
 - name: interface config
   command: /usr/lib/perfsonar/scripts/mod_interface_route --command add --device "{{ item['name'] }}" --ipv4_gateway "{{ item['ipv4_gateway'] }}"
   with_items: "{{ interfaces }}"
+  when: interfaces is defined
 
+# VARDEF: troubleshoot
 - name: troubleshoot pscheduler
   command: pscheduler troubleshoot "{{ item['host'] }}"
   with_items: "{{ troubleshoot }}"
