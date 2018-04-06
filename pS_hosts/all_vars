@@ -1,0 +1,77 @@
+
+### at least one local user with a ssh key is required
+#
+users:
+  - username
+
+### Lock down ssh to bastion hosts when defined
+#
+#bastion_hosts:
+#  - hostname
+
+### MAKE SURE you have users with ssh keys if you disable root login
+#
+#disable_root_ssh : true
+
+### nameservers listed here will be added to resolv.conf
+#
+#nameservers:
+#  - 8.8.8.8
+#  - 8.8.4.4
+
+### run NTP autoconfigure script if true
+# http://docs.perfsonar.net/install_centos.html#optional-packages
+# http://docs.perfsonar.net/manage_ntp.html
+#
+#perfsonar_toolkit_ntp : true
+
+### optional list of ntp servers to add
+#
+#ntpservers:
+#  - 8.8.8.8
+#  - 8.8.4.4
+
+#### System performance tuning
+# http://docs.perfsonar.net/install_centos.html#optional-packages
+# http://docs.perfsonar.net/manage_tuning.html
+#
+#perfsonar_toolkit_sysctl : true
+
+#### Enable perfSONAR firewalld rules
+# http://docs.perfsonar.net/install_centos.html#optional-packages
+# http://docs.perfsonar.net/manage_security.html
+#
+#perfsonar_toolkit_security : true
+
+### Enable software autoupdate
+# http://docs.perfsonar.net/manage_update.html#manage-update-auto-cli
+#
+#perfsonar_yum_autoupdate : true
+
+#### Enable perfSONAR servicewatcher
+# http://docs.perfsonar.net/install_centos.html#optional-packages
+#
+#perfsonar_toolkit_service_watcher : true
+
+### TODO Is this a thing?  Does nothing right now.
+#
+#perfsonar_toolkit_systemenv_testpoint : true
+
+### list of interfaces and gateways for multi-NIC systems
+# http://docs.perfsonar.net/manage_dual_xface.html
+#
+#interfaces:
+#  - name: em1
+#    ipv4_gateway: 192.12.80.233
+#  - name: p1p1
+#    ipv4_gateway: 192.12.80.225
+
+### ansible vault encrypted password, creates web user
+#
+#web_passwd: !vault |
+#	ENCRYPTED PASSWD
+
+### list of hosts to troubleshoot install
+#
+#troubleshoot:
+#  - host

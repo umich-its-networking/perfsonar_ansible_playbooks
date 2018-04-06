@@ -1,56 +1,52 @@
 ---
 # plays for testpoints
 
-#- name: restrict root ssh
-
-# BASTION
-#- name: adduser local users
-#  local_action:
-#  user:
-#    name: "{{ item['uid'] }}"
-#    generate_ssh_key: yes
-#  with_items: "{{ users }}"
-
-# VARDEF: bastion_hosts
-- name: hosts.allow
+- name: hosts.allow for bastion hosts
   lineinfile:
     path: /etc/hosts.allow
     line: "sshd: {{ item }}"
   with_items: "{{ bastion_hosts }}"
-  when: bastion_hosts is defined
+  when: bastion_hosts is defined and bastion_hosts != none
 
-- name: hosts.deny sshd all
+- name: hosts.deny sshd all for bastion hosts
   lineinfile:
     path: /etc/hosts.deny
     line: "sshd: all"
-  when: bastion_hosts is defined
+  when: bastion_hosts is defined and bastion_hosts != none
 
 - name: group pssudo
   group:
     name: pssudo
     state: present
 
-# VARDEF: users
 - name: adduser pssudo users
   user:
-    name: "{{ item['uid'] }}"
+    name: "{{ item }}"
     groups: pssudo
   with_items: "{{ users }}"
 
-- name: authkey users
+- name: set up authkeys for users
   authorized_key:
-    user: "{{item.uid}}"
-    key: "{{ lookup('file', '/home/{{ item.uid }}/.ssh/id_rsa.pub')}}"
+    user: "{{ item }}"
+    key: "{{ lookup('file', '/home/{{ item }}/.ssh/id_rsa.pub')}}"
   with_items: "{{ users }}"
-  ignore_errors: yes
 
-# VARDEF: nameservers
+- name: disable root ssh
+  lineinfile:
+    state: present
+    path: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin"
+    line: "PermitRootLogin no"
+  when: disable_root_ssh is defined and disable_root_ssh == true
+  notify:
+    - restart ssh
+
 - name: resolv.conf nameservers
   lineinfile:
     path: /etc/resolv.conf
     line: "nameserver {{ item }}"
   with_items: "{{ nameservers }}"
-  when: nameservers is defined
+  when: nameservers is defined and nameservers != none
 
 - name: yum epel-release
   yum: name=epel-release state=latest
@@ -61,64 +57,88 @@
 - name: yum clean all
   command: yum clean all
 
+### TODO other packages
+
 - name: yum install toolkit
   yum: name=perfsonar-toolkit state=latest
 
-- name: check for local ntp.conf
-  local_action: stat path=roles/testpoint/files/ntp.conf
-  register: stat_ntp_conf
+### TODO install extra_tools
 
-- name: copy ntp.conf
-  copy:
-    src: ../files/ntp.conf
-    dest: /etc/ntp.conf
-    force: no
-  when: stat_ntp_conf.stat.exists == true
+- name: perfSONAR ntp script
+  command: /usr/lib/perfsonar/scripts/configure_ntpd new
+  when: perfsonar_toolkit_ntp is defined and perfsonar_toolkit_ntp == true
   notify:
     - restart ntp
 
-- name: perfSONAR ntp script
-  command: echo Hello
-  when: stat_ntp_conf.stat.exists == false
-#  notify:
-#    - restart ntp
+- name: add ntpservers
+  lineinfile:
+    path: /etc/ntp.conf
+    line: "server {{ item }}"
+  with_items: "{{ ntpservers }}"
+  when: ntpservers is defined and ntpservers != none
+  notify:
+    - restart ntp
+
+- name: perfSONAR configure_sysctl performance tuning
+  command: /usr/lib/perfsonar/scripts/configure_sysctl
+  when: perfsonar_toolkit_configure_sysctl is defined and
+        perfsonar_toolkit_configure_sysctl == true
+
+- name: perfSONAR security script
+  command: /usr/lib/perfsonar/scripts/configure_firewall install
+  when: perfsonar_toolkit_security is defined and
+        perfsonar_toolkit_security == true
+
+- name: perfsonar yum autoupdate
+  systemd:
+    name: yum-cron
+    state: started
+    enabled: yes
+  when: perfsonar_yum_autoupdate is defined and perfsonar_yum_autoupdate == true
+
+- name: perfSONAR service_watcher script
+  command: /usr/lib/perfsonar/scripts/service_watcher
+  when: perfsonar_toolkit_service_watcher is defined and
+        perfsonar_toolkit_service_watcher == true
+
+### Uncomment below to print cleartext web_passwd
+#- name: echo hosts.allow for bastion hosts
+#  command: "echo {{ web_passwd }}"
+#  when: web_passwd is defined
 
 - name: Make sure we can use htpasswd module
   yum: name=python-passlib state=installed
-
-# VARDEF: web_passwd
-- name: htpasswd for pswebadmin
-  htpasswd:
-    path: /etc/perfsonar/toolkit/psadmin.htpasswd
-    name: pswebadmin
-    password: "{{ web_passwd }}"
-    state: present
+  when: web_passwd is defined
 
 - name: group psadmin
   group:
     name: psadmin
     state: present
+  when: web_passwd is defined
 
 - name: adduser pswebadmin
   user:
     name: pswebadmin
     group: psadmin
     shell: /bin/false
+  when: web_passwd is defined
 
-# VARDEF: interfaces
+- name: htpasswd for pswebadmin
+  htpasswd:
+    path: /etc/perfsonar/toolkit/psadmin.htpasswd
+    name: pswebadmin
+    password: "{{ web_passwd }}"
+    state: present
+  when: web_passwd is defined
+
+# TODO IPv6 interfaces
+
 - name: interface config
   command: /usr/lib/perfsonar/scripts/mod_interface_route --command add --device "{{ item['name'] }}" --ipv4_gateway "{{ item['ipv4_gateway'] }}"
   with_items: "{{ interfaces }}"
-  when: interfaces is defined
+  when: interfaces is defined and interfaces != none
 
-# VARDEF: troubleshoot
 - name: troubleshoot pscheduler
   command: pscheduler troubleshoot "{{ item['host'] }}"
   with_items: "{{ troubleshoot }}"
-  when: troubleshoot is defined
-
-# SYSTUNING
-# FIREWALL SCRIPTS
-# SERVICE WATCHER
-# SERVICE STATUS
-# SERVICE START
+  when: troubleshoot is defined and troubleshoot != none

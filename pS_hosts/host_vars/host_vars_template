@@ -1,0 +1,8 @@
+### list of interfaces and gateways for multi-NIC systems
+# http://docs.perfsonar.net/manage_dual_xface.html
+#
+#interfaces:
+#  - name: em1
+#    ipv4_gateway: 192.12.80.233
+#  - name: p1p1
+#    ipv4_gateway: 192.12.80.225

@@ -15,4 +15,4 @@ users:
   - uid: simpki
 
 bastion_hosts:
-#  - its-perfsonar-bastion.dsc.umich.edu
+  - its-perfsonar-bastion.dsc.umich.edu
