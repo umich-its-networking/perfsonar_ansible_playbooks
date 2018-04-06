@@ -5,6 +5,7 @@
 2. set up group_vars
 
 vi group_vars/testpoint
+ansible vault webuser passwd
 
 3. set up host_vars
 
