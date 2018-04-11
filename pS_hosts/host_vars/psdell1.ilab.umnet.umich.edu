@@ -1,3 +1,8 @@
+hostname: psdell1.ilab.umnet.umich.edu
+
+# debugging_handlers : true
+show_password : true
+
 interfaces:
   - name: em1
     ipv4_gateway: 10.111.249.1

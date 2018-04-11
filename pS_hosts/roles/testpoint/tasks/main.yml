@@ -1,6 +1,16 @@
 ---
 # plays for testpoints
 
+- name: debugging handlers
+  command: echo handler debugging
+  notify:
+    - debug handlers
+  when: debugging_handlers is defined and debugging_handlers == true
+
+- name: debugging handlers
+  meta: end_play
+  when: debugging_handlers is defined and debugging_handlers == true
+
 - name: hosts.allow for bastion hosts
   lineinfile:
     path: /etc/hosts.allow
@@ -13,6 +23,12 @@
     path: /etc/hosts.deny
     line: "sshd: all"
   when: bastion_hosts is defined and bastion_hosts != none
+
+- name: set hostname
+  hostname:
+    name: "{{ item }}"
+  with_items: "{{ hostname }}"
+  when: hostname is defined
 
 - name: group pssudo
   group:
@@ -101,10 +117,10 @@
   when: perfsonar_toolkit_service_watcher is defined and
         perfsonar_toolkit_service_watcher == true
 
-### Uncomment below to print cleartext web_passwd
-#- name: echo hosts.allow for bastion hosts
-#  command: "echo {{ web_passwd }}"
-#  when: web_passwd is defined
+- name: cleartext web_passwd
+  command: "echo {{ web_passwd }}"
+  when: web_passwd is defined and show_password is defined and
+        show_password == true
 
 - name: Make sure we can use htpasswd module
   yum: name=python-passlib state=installed
@@ -139,6 +155,6 @@
   when: interfaces is defined and interfaces != none
 
 - name: troubleshoot pscheduler
-  command: pscheduler troubleshoot "{{ item['host'] }}"
+  command: pscheduler troubleshoot "{{ item }}"
   with_items: "{{ troubleshoot }}"
   when: troubleshoot is defined and troubleshoot != none

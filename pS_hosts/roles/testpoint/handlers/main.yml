@@ -1,6 +1,9 @@
 ---
 # Handler
 
+- name: debug handlers
+  command: echo debugging handler working
+
 - name: restart ssh
   service: name=ssh state=restarted
 
