@@ -1,7 +1,66 @@
----
-# Variables listed here are applicable to testpoint hosts
 
-# ansible-vault encrypt_string 'CHANGEME' --ask-vault-pass --name=web_passwd
+### at least one local user with a ssh key is required
+#
+users:
+  - epcjr
+
+### Restrict ssh to bastion hosts when defined
+#
+bastion_hosts:
+  - 141.211.160.28
+
+### MAKE SURE you have users with ssh keys if you disable root login
+#
+#disable_root_ssh : true
+
+### nameservers listed here will be added to resolv.conf
+#
+nameservers:
+  - 8.8.8.8
+  - 8.8.4.4
+
+### perfSONAR NTP autoconfigure script
+### DOC: http://docs.perfsonar.net/install_centos.html#optional-packages
+### DOC: http://docs.perfsonar.net/manage_ntp.html
+#
+#perfsonar_toolkit_ntp : true
+
+### ntp servers to manually add
+#
+#ntpservers:
+#  - 216.239.35.0
+
+#### Uncomment for System performance tuning
+### DOC: http://docs.perfsonar.net/install_centos.html#optional-packages
+### DOC: http://docs.perfsonar.net/manage_tuning.html
+#
+#perfsonar_toolkit_configure_sysctl : true
+
+#### Uncomment to Enable perfSONAR firewalld rules
+### DOC: http://docs.perfsonar.net/install_centos.html#optional-packages
+### DOC: http://docs.perfsonar.net/manage_security.html
+#
+#perfsonar_toolkit_security : true
+
+### Uncomment to Enable software autoupdate
+### DOC: http://docs.perfsonar.net/manage_update.html#manage-update-auto-cli
+#
+#perfsonar_yum_autoupdate : true
+
+#### Uncomment to Enable perfSONAR servicewatcher
+### DOC: http://docs.perfsonar.net/install_centos.html#optional-packages
+#
+#perfsonar_toolkit_service_watcher : true
+
+### TODO Is this a thing?  Does nothing right now.
+#
+#perfsonar_toolkit_systemenv_testpoint : true
+
+### ansible vault encrypted password, creates web user
+### ansible-vault encrypt_string 'CHANGEME' --ask-vault-pass --name=web_passwd
+#
+#web_passwd: !vault |
+#	ENCRYPTED PASSWD
 web_passwd: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           38363164303366643333383964313839303264346566636364363062353565316435613866363364
@@ -10,9 +69,7 @@ web_passwd: !vault |
           3666616539626332360a373635323330373339653939623961663136313931333437373964343436
           6161
 
-users:
-  - uid: epcjr
-  - uid: simpki
-
-bastion_hosts:
-#  - its-perfsonar-bastion.dsc.umich.edu
+### list of hosts to troubleshoot install
+#
+troubleshoot:
+  - perfsonardev0.internet2.edu
